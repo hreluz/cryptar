@@ -30,38 +30,33 @@ Examples:
 EOF
 }
 
-# Handle --help before getopts
-if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-  show_help
-  exit 0
-fi
+parse_arguments() {
+  # Handle --help before getopts
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    show_help
+    exit 0
+  fi
 
-# Default values
-MODE=""
-SOURCE=""
-INPUT=""
-OUTPUT=""
+  while getopts ":cds:i:o:h" opt; do
+    case "$opt" in
+      c) MODE="compress" ;;
+      d) MODE="decompress" ;;
+      s) SOURCE="$OPTARG" ;;
+      i) INPUT="$OPTARG" ;;
+      o) OUTPUT="$OPTARG" ;;
+      h) show_help; exit 0 ;;
+      \?) echo "Unknown option: -$OPTARG" >&2; exit 1 ;;
+      :) echo "Missing argument for -$OPTARG" >&2; exit 1 ;;
+    esac
+  done
+}
 
-# Parse options
-while getopts ":cds:i:o:h" opt; do
-  case "$opt" in
-    c) MODE="compress" ;;
-    d) MODE="decompress" ;;
-    s) SOURCE="$OPTARG" ;;
-    i) INPUT="$OPTARG" ;;
-    o) OUTPUT="$OPTARG" ;;
-    h) show_help; exit 0 ;;
-    \?) echo "Unknown option: -$OPTARG" >&2; exit 1 ;;
-    :) echo "Missing argument for -$OPTARG" >&2; exit 1 ;;
-  esac
-done
-
-# Perform compression
-if [[ "$MODE" == "compress" ]]; then
+compress() {
   if [[ -z "$SOURCE" || -z "$OUTPUT" ]]; then
-    echo "Error: -s and -o are required in compression mode." >&2
+    echo "❌ Error: -s (source) and -o (output) are required for compression." >&2
     exit 1
   fi
+
   if [[ -n "$PASSPHRASE" ]]; then
     tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
       --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback -o "$OUTPUT"
@@ -69,25 +64,43 @@ if [[ "$MODE" == "compress" ]]; then
     tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
       --pinentry-mode loopback -o "$OUTPUT"
   fi
-  echo "Directory '$SOURCE' compressed and encrypted as '$OUTPUT'."
 
-# Perform decompression
-elif [[ "$MODE" == "decompress" ]]; then
+  echo "✅ Directory '$SOURCE' compressed and encrypted to '$OUTPUT'"
+}
+
+
+decompress() {
   if [[ -z "$INPUT" || -z "$OUTPUT" ]]; then
-    echo "Error: -i and -o are required in decompression mode." >&2
+    echo "❌ Error: -i (input) and -o (output) are required for decompression." >&2
     exit 1
   fi
+
   mkdir -p "$OUTPUT"
+
   if [[ -n "$PASSPHRASE" ]]; then
     gpg -d --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback "$INPUT" \
       | tar -xzf - -C "$OUTPUT"
   else
     gpg -d --pinentry-mode loopback "$INPUT" | tar -xzf - -C "$OUTPUT"
   fi
-  echo "File '$INPUT' decrypted and extracted to '$OUTPUT'."
 
-else
-  echo "Error: You must specify either -c (compress) or -d (decompress)." >&2
-  show_help
-  exit 1
-fi
+  echo "✅ File '$INPUT' decrypted and extracted to '$OUTPUT'"
+}
+
+# -------- Main execution flow --------
+MODE=""
+SOURCE=""
+INPUT=""
+OUTPUT=""
+
+parse_arguments "$@"
+
+case "$MODE" in
+  compress)   compress ;;
+  decompress) decompress ;;
+  *)
+    echo "❌ Error: You must specify either -c (compress) or -d (decompress)" >&2
+    show_help
+    exit 1
+    ;;
+esac
