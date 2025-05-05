@@ -1,10 +1,14 @@
-# SecureTar
+# Cryptar
 
-**SecureTar** is a Bash utility script to compress and encrypt (or decrypt and extract) directories using `tar` and `gpg`, with support for both interactive and non-interactive (automated) usage.
+<p align="center">
+    <img src="cryptar_logo.png" width="250">
+</p>
+
+**Cryptar** is a Bash utility script to compress and encrypt (or decrypt and extract) directories using `tar` and `gpg`, with support for both interactive and non-interactive (automated) usage.
 
 ## 🔐 What It Does
 
-SecureTar securely compresses directories into encrypted `.tar.gz.gpg` archives, and can also decrypt and extract them when needed. It supports optional password automation via environment variables.
+Cryptar securely compresses directories into encrypted `.tar.gz.gpg` archives, and can also decrypt and extract them when needed. It supports optional password automation via environment variables.
 
 ---
 
@@ -22,19 +26,19 @@ SecureTar securely compresses directories into encrypted `.tar.gz.gpg` archives,
 ### Compress a Directory
 
 ```bash
-./secure_tar.sh -c -s <source_dir> -o <output_file.tar.gz.gpg>
+./cryp_tar.sh -c -s <source_dir> -o <output_file.tar.gz.gpg>
 ```
 
 ### Decompress an Encrypted Archive
 
 ```bash
-./secure_tar.sh -d -i <input_file.tar.gz.gpg> -o <output_dir>
+./cryp_tar.sh -d -i <input_file.tar.gz.gpg> -o <output_dir>
 ```
 
 ### Show Help
 
 ```bash
-./secure_tar.sh --help
+./cryp_tar.sh --help
 ```
 
 ---
@@ -57,7 +61,7 @@ SecureTar securely compresses directories into encrypted `.tar.gz.gpg` archives,
 - `PASSPHRASE`: If set, enables non-interactive password input.
 
 ```bash
-PASSPHRASE="mypassword" ./secure_tar.sh -c -s myfolder -o backup.tar.gz.gpg
+PASSPHRASE="mypassword" ./cryp_tar.sh -c -s myfolder -o backup.tar.gz.gpg
 ```
 
 ---
@@ -66,12 +70,12 @@ PASSPHRASE="mypassword" ./secure_tar.sh -c -s myfolder -o backup.tar.gz.gpg
 
 **Interactive Compression:**
 ```bash
-./secure_tar.sh -c -s project -o project.tar.gz.gpg
+./cryp_tar.sh -c -s project -o project.tar.gz.gpg
 ```
 
 **Automated Decompression:**
 ```bash
-PASSPHRASE="secret123" ./secure_tar.sh -d -i project.tar.gz.gpg -o ./extracted
+PASSPHRASE="secret123" ./cryp_tar.sh -d -i project.tar.gz.gpg -o ./extracted
 ```
 
 ---
