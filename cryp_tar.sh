@@ -16,6 +16,7 @@ Options:
   -s <dir>      Source directory to compress (used with -c)
   -i <file>     Encrypted input file to decrypt (used with -d)
   -o <file|dir> Output file or directory
+  -p <file>     Optional: read passphrase from file (overrides PASSPHRASE)
   -h, --help    Show help message
 
 Environment Variables:
@@ -27,6 +28,9 @@ Examples:
 
   Decompress with an environment variable:
     PASSPHRASE="mypassword" $0 -d -i archive.tar.gz.gpg -o ./output
+
+  Decompress with password from file:
+    $0 -d -i archive.tar.gz.gpg -o ./output -p secret.txt
 EOF
 }
 
@@ -37,18 +41,29 @@ parse_arguments() {
     exit 0
   fi
 
-  while getopts ":cds:i:o:h" opt; do
+  while getopts ":cds:i:o:p:h" opt; do
     case "$opt" in
       c) MODE="compress" ;;
       d) MODE="decompress" ;;
       s) SOURCE="$OPTARG" ;;
       i) INPUT="$OPTARG" ;;
       o) OUTPUT="$OPTARG" ;;
+      p) PASSPHRASE_FILE="$OPTARG" ;;
       h) show_help; exit 0 ;;
       \?) echo "Unknown option: -$OPTARG" >&2; exit 1 ;;
       :) echo "Missing argument for -$OPTARG" >&2; exit 1 ;;
     esac
   done
+
+  # Load password from file if specified
+  if [[ -n "$PASSPHRASE_FILE" ]]; then
+    if [[ -f "$PASSPHRASE_FILE" ]]; then
+      PASSPHRASE="$(< "$PASSPHRASE_FILE")"
+    else
+      echo "❌ Error: Password file not found: $PASSPHRASE_FILE" >&2
+      exit 1
+    fi
+  fi
 }
 
 compress() {
@@ -92,6 +107,8 @@ MODE=""
 SOURCE=""
 INPUT=""
 OUTPUT=""
+PASSPHRASE=""
+PASSPHRASE_FILE=""
 
 parse_arguments "$@"
 

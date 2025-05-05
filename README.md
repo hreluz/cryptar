@@ -16,7 +16,7 @@ Cryptar securely compresses directories into encrypted `.tar.gz.gpg` archives, a
 
 - Compress and encrypt any directory using `tar` + `gpg`
 - Decrypt and extract previously encrypted archives
-- Interactive or automated password input via `$PASSPHRASE`
+- Interactive or automated password input via `$PASSPHRASE` or `-p <file>`
 - Safe error handling and helpful `--help` usage message
 
 ---
@@ -52,13 +52,16 @@ Cryptar securely compresses directories into encrypted `.tar.gz.gpg` archives, a
 | `-s <dir>` | Source directory to compress                            |
 | `-i <file>`| Input file to decrypt                                   |
 | `-o <path>`| Output file or output directory                         |
+| `-p <file>`| Optional: read passphrase from file (overrides PASSPHRASE)  |
 | `-h`       | Show help                                               |
 
 ---
 
-## 🔐 Environment Variables
+## 🔐 Password Methods
 
-- `PASSPHRASE`: If set, enables non-interactive password input.
+- `-p <file>`: specify a file containing the passphrase (preferred for automation)
+- `PASSPHRASE` environment variable
+- Interactive prompt fallback if neither is provided
 
 ```bash
 PASSPHRASE="mypassword" ./cryp_tar.sh -c -s myfolder -o backup.tar.gz.gpg
@@ -76,6 +79,11 @@ PASSPHRASE="mypassword" ./cryp_tar.sh -c -s myfolder -o backup.tar.gz.gpg
 **Automated Decompression:**
 ```bash
 PASSPHRASE="secret123" ./cryp_tar.sh -d -i project.tar.gz.gpg -o ./extracted
+```
+
+**Password from file:**
+```bash
+./cryp_tar.sh -d -i archive.tar.gz.gpg -o ./output -p secret.txt
 ```
 
 ---
