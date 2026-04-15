@@ -110,14 +110,14 @@ decompress() {
     exit 1
   fi
 
+  if [[ -z "$PASSPHRASE" ]]; then
+    read -r -s -p "Enter passphrase: " PASSPHRASE; echo
+  fi
+
   mkdir -p "$OUTPUT"
 
-  if [[ -n "$PASSPHRASE" ]]; then
-    ( gpg -d --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback "$INPUT" \
-        | tar -xzf - -C "$OUTPUT" ) &
-  else
-    ( gpg -d --pinentry-mode loopback "$INPUT" | tar -xzf - -C "$OUTPUT" ) &
-  fi
+  ( gpg -d --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback "$INPUT" \
+      | tar -xzf - -C "$OUTPUT" ) &
   local pid=$!
   spinner "$pid" "Decrypting and extracting '$INPUT'..."
   wait "$pid" || { echo "❌ Error: Decompression failed." >&2; exit 1; }
