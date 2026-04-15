@@ -3,6 +3,19 @@
 # Secure TAR using GPG with password protection.
 # Supports interactive and non-interactive use via $PASSPHRASE.
 
+spinner() {
+  local pid=$1
+  local msg=$2
+  local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local i=0
+  while kill -0 "$pid" 2>/dev/null; do
+    printf "\r  %s %s " "${spinstr:$i:1}" "$msg" >&2
+    i=$(( (i + 1) % ${#spinstr} ))
+    sleep 0.1
+  done
+  printf "\r\033[2K" >&2
+}
+
 show_help() {
   cat << EOF
 Usage:
@@ -72,13 +85,20 @@ compress() {
     exit 1
   fi
 
-  if [[ -n "$PASSPHRASE" ]]; then
-    tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
-      --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback -o "$OUTPUT"
-  else
-    tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
-      --pinentry-mode loopback -o "$OUTPUT"
+  if [[ -z "$PASSPHRASE" ]]; then
+    read -r -s -p "Enter passphrase: " PASSPHRASE; echo
+    read -r -s -p "Confirm passphrase: " PASSPHRASE_CONFIRM; echo
+    if [[ "$PASSPHRASE" != "$PASSPHRASE_CONFIRM" ]]; then
+      echo "❌ Error: Passphrases do not match." >&2
+      exit 1
+    fi
   fi
+
+  ( tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
+      --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback -o "$OUTPUT" ) &
+  local pid=$!
+  spinner "$pid" "Compressing and encrypting '$SOURCE'..."
+  wait "$pid" || { echo "❌ Error: Compression failed." >&2; exit 1; }
 
   echo "✅ Directory '$SOURCE' compressed and encrypted to '$OUTPUT'"
 }
@@ -90,14 +110,17 @@ decompress() {
     exit 1
   fi
 
+  if [[ -z "$PASSPHRASE" ]]; then
+    read -r -s -p "Enter passphrase: " PASSPHRASE; echo
+  fi
+
   mkdir -p "$OUTPUT"
 
-  if [[ -n "$PASSPHRASE" ]]; then
-    gpg -d --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback "$INPUT" \
-      | tar -xzf - -C "$OUTPUT"
-  else
-    gpg -d --pinentry-mode loopback "$INPUT" | tar -xzf - -C "$OUTPUT"
-  fi
+  ( gpg -d --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback "$INPUT" \
+      | tar -xzf - -C "$OUTPUT" ) &
+  local pid=$!
+  spinner "$pid" "Decrypting and extracting '$INPUT'..."
+  wait "$pid" || { echo "❌ Error: Decompression failed." >&2; exit 1; }
 
   echo "✅ File '$INPUT' decrypted and extracted to '$OUTPUT'"
 }
