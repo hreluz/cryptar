@@ -76,8 +76,14 @@ compress() {
     tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
       --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback -o "$OUTPUT"
   else
+    read -r -s -p "Enter passphrase: " PASSPHRASE; echo
+    read -r -s -p "Confirm passphrase: " PASSPHRASE_CONFIRM; echo
+    if [[ "$PASSPHRASE" != "$PASSPHRASE_CONFIRM" ]]; then
+      echo "❌ Error: Passphrases do not match." >&2
+      exit 1
+    fi
     tar -czf - "$SOURCE" | gpg --symmetric --cipher-algo AES256 \
-      --pinentry-mode loopback -o "$OUTPUT"
+      --batch --yes --passphrase "$PASSPHRASE" --pinentry-mode loopback -o "$OUTPUT"
   fi
 
   echo "✅ Directory '$SOURCE' compressed and encrypted to '$OUTPUT'"
